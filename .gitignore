@@ -1,0 +1,62 @@
+# Build outputs
+build/
+build-*/
+**/build/
+**/build-*/
+*.o
+*.a
+*.so
+*.so.*
+*.out
+
+# Python environments and caches
+.venv/
+.python/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Download caches and incomplete files
+downloads/
+*.incomplete
+*.part
+*.tmp
+
+# Runtime files and captured media
+*.log
+*.pid
+*.lock
+nohup.out
+core
+core.*
+*.raw
+*.nv12
+*.yuv
+*.mjpg
+*.h264
+*.mp4
+*.avi
+
+# Firmware images and large archives
+*.img
+*.iso
+*.rar
+*.7z
+
+# Local tools and third-party working copies
+.tools/
+ov13850_materials/
+j7-yolov5-rknn-pc/.tools/
+j7-yolov5-rknn-pc/third_party/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local environment overrides
+.env
+.env.*
+!.env.example

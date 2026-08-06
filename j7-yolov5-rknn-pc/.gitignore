@@ -1,0 +1,11 @@
+.venv/
+.python/
+build/
+cache/
+downloads/
+models/generated/*
+!models/generated/.gitkeep
+!models/generated/*.rknn
+datasets/calibration/images/
+*.pyc
+__pycache__/

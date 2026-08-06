@@ -1,0 +1,39 @@
+{
+  "cameras": [
+    {
+      "id": "j7",
+      "title": "J7 · OV13850",
+      "type": "ov13850",
+      "device": "/dev/video-camera0",
+      "format": "NV12",
+      "width": 2112,
+      "height": 1568,
+      "fps": 30,
+      "inference": true,
+      "enabled": true
+    },
+    {
+      "id": "j8",
+      "title": "J8 · OV13850",
+      "type": "ov13850-j8",
+      "device": "/dev/video-camera1",
+      "format": "NV12",
+      "width": 2112,
+      "height": 1568,
+      "fps": 30,
+      "inference": true,
+      "enabled": true
+    },
+    {
+      "id": "uc325",
+      "title": "USB · UC325",
+      "type": "uc325",
+      "format": "MJPG",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "inference": true,
+      "enabled": true
+    }
+  ]
+}
