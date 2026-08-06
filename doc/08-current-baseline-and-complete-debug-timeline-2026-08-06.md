@@ -150,3 +150,23 @@ Web地址：`http://192.168.10.65:8080/`。
 - Web黑屏修复和全局开关：`web-camera-recovery...`；
 - Web按需处理：`web-stage10...`；
 - Qt完整优化细节：`zx-camera-qt-demo/docs/optimization-log-2026-08-05.md`。
+
+## 10. GitHub备份状态
+
+2026-08-06在`/home/wx/2-demoRK`初始化Git，保留源码、配置、脚本、IQ、ONNX、RKNN
+模型、测试报告和调试文档；通过`.gitignore`排除可重建虚拟环境、下载缓存、编译
+目录、1.8 GB RKISP Tuner资料和大型RAR。首次提交后补充项目总README。
+
+HTTPS推送先后遇到远程已有初始提交和Token认证失败。改用SSH后，GitHub官方
+Ed25519指纹验证正确，但当前网络把`github.com`解析到代理地址，IPv6连接在握手后
+卡住。使用`ssh -4`后成功认证为`ywx920`，并将仓库级`core.sshCommand`固定为IPv4。
+
+远程`main`仅有GitHub自动生成的README提交`590b085`。本地执行允许无共同历史的
+合并，README发生add/add冲突后保留本工程完整版本，生成合并提交`94f7606`并成功
+推送。当前远程为：
+
+```text
+git@github.com:ywx920/rk3588-demo-camera.git
+```
+
+日常备份只需`git add -A`、`git commit`和`git push`，不再使用Token。

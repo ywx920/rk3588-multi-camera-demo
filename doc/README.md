@@ -60,6 +60,11 @@
     - `web-camera-recovery-and-global-camera-control`：Web黑屏恢复
     - `web-stage10-demand-and-bandwidth-optimization`：按需处理与滚动FPS
 
+11. [10-github-backup-and-ssh-debug-record-2026-08-06.md](10-github-backup-and-ssh-debug-record-2026-08-06.md)
+    - 5.1 GB工作目录的Git备份范围与忽略规则
+    - HTTPS Token认证失败、SSH IPv6卡住及强制IPv4修复
+    - 远程初始README冲突处理和最终推送结果
+
 ## 关联历史文档
 
 早期 OV13850 详细日志仍保留在：
