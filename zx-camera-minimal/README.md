@@ -64,33 +64,26 @@ bash scripts/run_camera.sh
 
 ## PC 上传并触发板端测试
 
-默认开发板连接为 `zxwy@192.168.10.65`。按当前项目要求，默认密码已经
-写入 PC 部署脚本，并通过 `SSH_ASKPASS` 自动提供。在 PC 项目目录执行短测试：
+部署脚本不包含默认密码。运行前，在 PC 终端交互输入当前板端密码，
+通过环境变量交给 `SSH_ASKPASS`，避免把密码写进脚本或命令历史：
 
 ```bash
+read -r -s -p 'Board SSH password: ' BOARD_PASSWORD
+printf '\n'
+export BOARD_PASSWORD
+
 bash scripts/pc_deploy_and_test.sh
+# 完整验收（包含 10 分钟稳定性测试）
+# bash scripts/pc_deploy_and_test.sh --long-test
+
+unset BOARD_PASSWORD
 ```
 
-完整验收（包含 10 分钟稳定性测试）：
-
-```bash
-bash scripts/pc_deploy_and_test.sh --long-test
-```
-
-需要临时使用其他 SSH 用户时通过环境变量指定：
-
-```bash
-BOARD_USER=root bash scripts/pc_deploy_and_test.sh
-```
-
-也可在不修改脚本时覆盖密码：
-
-```bash
-BOARD_PASSWORD='新密码' bash scripts/pc_deploy_and_test.sh
-```
-
-注意：明文密码会暴露给能够读取该脚本的本机用户。不要把这个脚本提交到公开
-仓库；环境稳定后应改用 SSH 公钥认证并删除默认密码。
+连接地址和用户仍可通过 `BOARD_IP`、`BOARD_USER` 覆盖。
+同一环境变量也用于 IQ 测试、Qt 部署和帧预览脚本。
+密码未设置或为空时，脚本会在连接前退出并提示配置。
+不要将密码、包含密码的本地配置或 SSH 私钥提交到仓库。
+如果板端仍使用过去公开过的默认密码，请先在设备上更换；删除仓库中的密码不会使旧密码失效。
 
 也可先手工上传项目，然后登录板端执行：
 

@@ -10,7 +10,7 @@
 set -euo pipefail
 
 if [ "${ZX_CAMERA_ASKPASS_MODE:-0}" = "1" ]; then
-    printf '%s\n' "${BOARD_PASSWORD:-qwer1234}"
+    printf '%s\n' "${BOARD_PASSWORD:?Set BOARD_PASSWORD in the environment}"
     exit 0
 fi
 
@@ -18,7 +18,7 @@ PROJECT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 SCRIPT_PATH="$PROJECT_DIR/scripts/pc_deploy_and_test.sh"
 BOARD_IP="${BOARD_IP:-192.168.10.65}"
 BOARD_USER="${BOARD_USER:-zxwy}"
-BOARD_PASSWORD="${BOARD_PASSWORD:-qwer1234}"
+BOARD_PASSWORD="${BOARD_PASSWORD:?Set BOARD_PASSWORD in the environment}"
 BOARD_PORT="${BOARD_PORT:-22}"
 REMOTE_PARENT="${REMOTE_PARENT:-/tmp/zx-deploy}"
 REMOTE_PROJECT="$REMOTE_PARENT/$(basename "$PROJECT_DIR")"
