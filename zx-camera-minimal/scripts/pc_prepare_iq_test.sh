@@ -74,7 +74,7 @@ if [ ! -f "$COMPAT_IQ" ]; then
 fi
 
 echo "===== 1. Package camera source ====="
-tar -czf "$LOCAL_ARCHIVE" \
+tar -czf "$LOCAL_ARCHIVE" --exclude='.git' --exclude='.env' --exclude='.env.*' --exclude='.ssh' --exclude='id_rsa*' --exclude='id_ed25519*' --exclude='*.pem' --exclude='*.p12' --exclude='*.pfx' --exclude='*.key' \
     --exclude='zx-camera-minimal/build' \
     --exclude='zx-camera-minimal/build-board' \
     --exclude='zx-camera-minimal/board-reports' \

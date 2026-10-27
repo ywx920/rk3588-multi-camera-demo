@@ -26,4 +26,4 @@ if ! kill -0 "$PID" 2>/dev/null; then
     exit 1
 fi
 echo "Started: PID $PID"
-echo "URL: http://192.168.10.65:${PORT:-8080}/"
+echo "URL: http://${WEB_BIND_ADDRESS:-127.0.0.1}:${PORT:-8080}/"

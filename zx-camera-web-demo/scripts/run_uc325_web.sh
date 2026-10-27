@@ -20,4 +20,5 @@ exec "$PROJECT_DIR/zx-camera_web" \
     --j8 "${J8_DEVICE:-/dev/video-camera1}" \
     --uc325 "$uc325" \
     --ov-encode-every "${OV_ENCODE_EVERY:-3}" \
+    --bind "${WEB_BIND_ADDRESS:-127.0.0.1}" \
     --port "$PORT"

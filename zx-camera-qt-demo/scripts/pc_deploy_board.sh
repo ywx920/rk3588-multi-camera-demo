@@ -25,7 +25,7 @@ scp_run()
         -o PubkeyAuthentication=no -o StrictHostKeyChecking=accept-new \
         -P "$port" "$@" < /dev/null
 }
-tar -czf "$archive" --exclude=build --exclude=build-board -C "$project" .
+tar -czf "$archive" --exclude='.git' --exclude='.env' --exclude='.env.*' --exclude='.ssh' --exclude='id_rsa*' --exclude='id_ed25519*' --exclude='*.pem' --exclude='*.p12' --exclude='*.pfx' --exclude='*.key' --exclude=build --exclude=build-board -C "$project" .
 ssh_run "mkdir -p '$remote'"
 scp_run "$archive" "$user@$ip:$remote/source.tar.gz"
 ssh_run "tar -xzf '$remote/source.tar.gz' -C '$remote' &&

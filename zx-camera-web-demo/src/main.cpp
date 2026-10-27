@@ -4,6 +4,7 @@
 #include "nv12_converter.h"
 #include "rknn_yolov5_engine.h"
 #include "detection_types.h"
+#include "http_security.h"
 
 #include <QBuffer>
 #include <QGuiApplication>
@@ -22,6 +23,7 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <future>
 #include <filesystem>
 #include <memory>
 #include <mutex>
@@ -231,15 +233,15 @@ std::string page(const std::vector<std::unique_ptr<SharedFrame>>& cameras)
     std::ostringstream cards;
     for (const auto& camera : cameras) {
         cards << "<article class=\"card\"><div class=\"cardHead\"><div>"
-              << "<span class=\"live\"></span><h2>" << camera->config.title
-              << "</h2></div><span class=\"tag\">" << camera->config.format
+              << "<span class=\"live\"></span><h2>" << zx_web_security::escape_html(camera->config.title)
+              << "</h2></div><span class=\"tag\">" << zx_web_security::escape_html(camera->config.format)
               << "</span></div><div class=\"viewport\"><img src=\"/"
-              << camera->config.id << ".mjpg\" loading=\"lazy\"></div>"
-              << "<div class=\"bottom\"><div id=\"" << camera->config.id
+              << zx_web_security::escape_html(camera->config.id) << ".mjpg\" loading=\"lazy\"></div>"
+              << "<div class=\"bottom\"><div id=\"" << zx_web_security::escape_html(camera->config.id)
               << "\" class=\"status\">正在连接视频流…</div>"
-              << "<button class=\"camera\" data-id=\"" << camera->config.id
+              << "<button class=\"camera\" data-id=\"" << zx_web_security::escape_html(camera->config.id)
               << "\">摄像头开启</button><button class=\"detect\" data-id=\""
-              << camera->config.id << "\">检测开启</button></div></article>";
+              << zx_web_security::escape_html(camera->config.id) << "\">检测开启</button></div></article>";
     }
     return R"(<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -250,7 +252,7 @@ header{padding:28px clamp(18px,4vw,56px) 14px;display:flex;align-items:end;justi
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:18px;padding:18px clamp(18px,4vw,56px) 42px}.card{background:linear-gradient(145deg,rgba(24,35,59,.96),rgba(13,21,38,.96));border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 18px 50px #0007;overflow:hidden}.cardHead{display:flex;align-items:center;justify-content:space-between;padding:3px 3px 12px}.cardHead>div{display:flex;align-items:center;gap:9px}h2{font-size:17px;margin:0}.live{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 14px var(--green)}.card.cameraOff .live{background:#647089;box-shadow:none}.tag{font:12px ui-monospace,monospace;color:var(--cyan);background:#142941;border:1px solid #244565;padding:4px 8px;border-radius:7px}.viewport{position:relative;background:#02050a;border:1px solid #263755;border-radius:12px;overflow:hidden;aspect-ratio:4/3;display:grid;place-items:center}.card.cameraOff .viewport:after{content:'CAMERA OFF';position:absolute;color:#8e9ab0;font:600 15px ui-monospace,monospace;letter-spacing:.12em}.card.cameraOff img{opacity:.08}img{width:100%;height:100%;object-fit:contain}.bottom{display:flex;align-items:center;gap:9px;padding-top:9px;flex-wrap:wrap}.status{color:var(--muted);font:12px ui-monospace,monospace;flex:1;min-width:180px}.error{color:#ff8291}.detect,.camera{border:1px solid #26775f;background:#123d34;color:#67efbd;border-radius:8px;padding:6px 10px;cursor:pointer}.camera{border-color:#27648a;background:#153449;color:#78cbed}.detect.off,.camera.off,.detect:disabled{border-color:#465269;background:#222b3c;color:#91a0ba}.detect:disabled{cursor:not-allowed}footer{color:#66758f;text-align:center;padding:0 20px 24px;font-size:12px}
 @media(max-width:600px){header{align-items:start;flex-direction:column}.grid{padding-top:8px}.card{border-radius:14px}}
 </style></head><body><header><div><h1>ZX Vision Console</h1><div class="sub">RK3588 多路实时视觉监控</div></div><div class="headerRight"><button id="cameraAllOn" class="allCamera">开启全部摄像头</button><button id="cameraAllOff" class="allCamera off">关闭全部摄像头</button><button id="allOn" class="allDetect">开启全部推理</button><button id="allOff" class="allDetect off">一键关闭推理</button><div id="health" class="health">● 服务在线</div></div></header><main class="grid">)" + cards.str() + R"(</main><footer>ZX2603-2 · Dynamic V4L2 Streaming</footer><script>
-async function update(){try{const all=await fetch('/status',{cache:'no-store'}).then(r=>r.json());for(const x of all){const e=document.getElementById(x.id);if(!e)continue;const card=e.closest('.card');card.classList.toggle('cameraOff',!x.camera);e.classList.toggle('error',!!x.error);e.textContent=x.error||(!x.camera?'摄像头已暂停':`${x.width}×${x.height} · ${x.fps.toFixed(1)} FPS · NPU ${x.inference_ms.toFixed(1)} ms · ${x.objects} obj · ${x.encoder}`);const d=card.querySelector('.detect');d.classList.toggle('off',!x.detection);d.textContent=x.detection?'检测开启':'检测关闭';d.disabled=!x.camera;const c=card.querySelector('.camera');c.classList.toggle('off',!x.camera);c.textContent=x.camera?'摄像头开启':'摄像头关闭';}document.getElementById('health').textContent=`● ${all.filter(x=>x.camera).length}/${all.length} 路在线 · ${all.filter(x=>x.detection).length} 路推理`;}catch(e){document.getElementById('health').textContent='● 连接中断';}}document.querySelectorAll('.detect').forEach(b=>b.onclick=async()=>{const enable=b.classList.contains('off')?1:0;await fetch(`/toggle?id=${b.dataset.id}&enabled=${enable}`,{method:'POST'});update();});document.querySelectorAll('.camera').forEach(b=>b.onclick=async()=>{const enable=b.classList.contains('off')?1:0;await fetch(`/camera-toggle?id=${b.dataset.id}&enabled=${enable}`,{method:'POST'});update();});document.getElementById('cameraAllOn').onclick=async()=>{await fetch('/camera-all?enabled=1',{method:'POST'});update();};document.getElementById('cameraAllOff').onclick=async()=>{await fetch('/camera-all?enabled=0',{method:'POST'});update();};document.getElementById('allOn').onclick=async()=>{await fetch('/inference-all?enabled=1',{method:'POST'});update();};document.getElementById('allOff').onclick=async()=>{await fetch('/inference-all?enabled=0',{method:'POST'});update();};setInterval(update,1000);update();
+async function update(){try{const all=await fetch('/status',{cache:'no-store'}).then(r=>r.json());for(const x of all){const e=document.getElementById(x.id);if(!e)continue;const card=e.closest('.card');card.classList.toggle('cameraOff',!x.camera);e.classList.toggle('error',!!x.error);e.textContent=x.error||(!x.camera?'摄像头已暂停':`${x.width}×${x.height} · ${x.fps.toFixed(1)} FPS · NPU ${x.inference_ms.toFixed(1)} ms · ${x.objects} obj · ${x.encoder}`);const d=card.querySelector('.detect');d.classList.toggle('off',!x.detection);d.textContent=x.detection?'检测开启':'检测关闭';d.disabled=!x.camera;const c=card.querySelector('.camera');c.classList.toggle('off',!x.camera);c.textContent=x.camera?'摄像头开启':'摄像头关闭';}document.getElementById('health').textContent=`● ${all.filter(x=>x.camera).length}/${all.length} 路在线 · ${all.filter(x=>x.detection).length} 路推理`;}catch(e){document.getElementById('health').textContent='● 连接中断';}}document.querySelectorAll('.detect').forEach(b=>b.onclick=async()=>{const enable=b.classList.contains('off')?1:0;await fetch(`/toggle?id=${b.dataset.id}&enabled=${enable}`,{method:'POST',headers:{'Content-Type':'application/json'}});update();});document.querySelectorAll('.camera').forEach(b=>b.onclick=async()=>{const enable=b.classList.contains('off')?1:0;await fetch(`/camera-toggle?id=${b.dataset.id}&enabled=${enable}`,{method:'POST',headers:{'Content-Type':'application/json'}});update();});document.getElementById('cameraAllOn').onclick=async()=>{await fetch('/camera-all?enabled=1',{method:'POST',headers:{'Content-Type':'application/json'}});update();};document.getElementById('cameraAllOff').onclick=async()=>{await fetch('/camera-all?enabled=0',{method:'POST',headers:{'Content-Type':'application/json'}});update();};document.getElementById('allOn').onclick=async()=>{await fetch('/inference-all?enabled=1',{method:'POST',headers:{'Content-Type':'application/json'}});update();};document.getElementById('allOff').onclick=async()=>{await fetch('/inference-all?enabled=0',{method:'POST',headers:{'Content-Type':'application/json'}});update();};setInterval(update,1000);update();
 </script></body></html>)";
 }
 
@@ -300,16 +302,40 @@ void stream_client(int client, SharedFrame& shared)
 
 void client_session(int client, std::vector<std::unique_ptr<SharedFrame>>& cameras)
 {
+    struct ClientSocket {
+        int fd;
+        ~ClientSocket() { close(fd); }
+    } socket_guard{client};
     timeval timeout{3, 0};
     (void)setsockopt(client, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-    char request[2048]{};
-    const ssize_t count = recv(client, request, sizeof(request) - 1U, 0);
-    if (count <= 0) { close(client); return; }
-    const std::string text(request, static_cast<std::size_t>(count));
+    (void)setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    std::string text;
+    while (text.find("\r\n\r\n") == std::string::npos) {
+        char request[2048]{};
+        const ssize_t count = recv(client, request, sizeof(request), 0);
+        if (count <= 0) return;
+        text.append(request, static_cast<std::size_t>(count));
+        if (text.size() > 8192U) {
+            const char response[] = "HTTP/1.1 431 Request Header Fields Too Large\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            (void)send_all(client, response, sizeof(response) - 1U);
+            return;
+        }
+    }
     const auto first = text.find(' ');
     const auto second = first == std::string::npos ? first : text.find(' ', first + 1U);
     const std::string path = first == std::string::npos || second == std::string::npos
         ? "/" : text.substr(first + 1U, second - first - 1U);
+    const std::string method = first == std::string::npos ? "" : text.substr(0, first);
+    if (zx_web_security::is_control_path(path)) {
+        const int status = zx_web_security::control_request_status(method, text);
+        if (status != 0) {
+            const std::string response = status == 405
+                ? "HTTP/1.1 405 Method Not Allowed\r\nAllow: POST\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                : "HTTP/1.1 415 Unsupported Media Type\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            (void)send_all(client, response.data(), response.size());
+            return;
+        }
+    }
     if (path == "/") {
         const std::string body = page(cameras);
         const std::string header = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nContent-Length: " + std::to_string(body.size()) + "\r\nConnection: close\r\n\r\n";
@@ -323,7 +349,7 @@ void client_session(int client, std::vector<std::unique_ptr<SharedFrame>>& camer
             std::lock_guard<std::mutex> lock(item.mutex);
             const bool camera_on = item.camera_enabled.load();
             if (index) body << ',';
-            body << "{\"id\":\"" << item.config.id << "\",\"width\":" << item.config.width
+            body << "{\"id\":\"" << zx_web_security::escape_json(item.config.id) << "\",\"width\":" << item.config.width
                  << ",\"height\":" << item.config.height << ",\"fps\":" << item.fps
                  << ",\"frames\":" << item.frames
                  << ",\"viewers\":" << item.viewers.load()
@@ -334,8 +360,8 @@ void client_session(int client, std::vector<std::unique_ptr<SharedFrame>>& camer
                  << ",\"inference_ms\":" << (camera_on ? item.inference_ms : 0.0)
                  << ",\"inference_fps\":" << (camera_on ? item.inference_fps : 0.0)
                  << ",\"objects\":" << (camera_on ? item.objects : 0U)
-                 << ",\"encoder\":\"" << item.encoder << "\""
-                 << ",\"error\":\"" << item.error << "\"}";
+                 << ",\"encoder\":\"" << zx_web_security::escape_json(item.encoder) << "\""
+                 << ",\"error\":\"" << zx_web_security::escape_json(item.error) << "\"}";
         }
         body << ']';
         const std::string data = body.str();
@@ -405,7 +431,6 @@ void client_session(int client, std::vector<std::unique_ptr<SharedFrame>>& camer
         const char response[] = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         (void)send_all(client, response, sizeof(response) - 1U);
     }
-    close(client);
 }
 
 void capture_camera(SharedFrame& shared)
@@ -586,23 +611,26 @@ int main(int argc, char** argv)
     std::string config_path = "/home/zxwy/zx-camera-web-demo/config/cameras.json";
     std::string model_path =
         "/home/zxwy/j7-yolov5/models/yolov5s_relu_rk3588_int8.rknn";
+    std::string bind_address = "127.0.0.1";
     int port = 8080, ov_encode_every = 3;
     for (int i = 1; i < argc; ++i) {
         const std::string option = argv[i];
         if (option == "--help") {
-            std::cout << "Usage: " << argv[0] << " [--config FILE] [--model FILE] [--j7 PATH] [--j8 PATH] [--uc325 PATH] [--port N] [--ov-encode-every N]\n";
+            std::cout << "Usage: " << argv[0] << " [--config FILE] [--model FILE] [--j7 PATH] [--j8 PATH] [--uc325 PATH] [--bind IPV4] [--port N] [--ov-encode-every N]\n";
             return 0;
         }
         if (i + 1 >= argc) throw std::invalid_argument("missing value for " + option);
         if (option == "--j7") j7 = argv[++i];
         else if (option == "--j8") j8 = argv[++i];
         else if (option == "--uc325") uc325 = argv[++i];
+        else if (option == "--bind") bind_address = argv[++i];
         else if (option == "--port") port = positive(argv[++i]);
         else if (option == "--ov-encode-every") ov_encode_every = positive(argv[++i]);
         else if (option == "--config") config_path = argv[++i];
         else if (option == "--model") model_path = argv[++i];
         else throw std::invalid_argument("unknown option: " + option);
     }
+    const in_addr configured_address = zx_web_security::parse_bind_address(bind_address);
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
     auto configured = load_camera_config(config_path, ov_encode_every,
@@ -615,6 +643,8 @@ int main(int argc, char** argv)
     std::vector<std::unique_ptr<SharedFrame>> cameras;
     for (auto& camera : configured)
         cameras.emplace_back(std::make_unique<SharedFrame>(std::move(camera)));
+    std::vector<std::future<void>> clients;
+    clients.reserve(32);
     std::vector<std::thread> capture_threads;
     for (auto& camera : cameras) capture_threads.emplace_back(capture_camera, std::ref(*camera));
     int server = -1;
@@ -625,30 +655,49 @@ int main(int argc, char** argv)
         (void)setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
         sockaddr_in address{};
         address.sin_family = AF_INET;
-        address.sin_addr.s_addr = htonl(INADDR_ANY);
+        address.sin_addr = configured_address;
         address.sin_port = htons(static_cast<std::uint16_t>(port));
         if (bind(server, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
             throw std::system_error(errno, std::generic_category(), "bind");
         if (listen(server, 16) < 0) throw std::runtime_error("listen failed");
-        std::cout << cameras.size() << "-camera preview: http://0.0.0.0:"
+        std::cout << cameras.size() << "-camera preview: http://" << bind_address << ":"
                   << port << "/\n";
-        std::vector<std::thread> clients;
         while (running.load()) {
+            for (auto it = clients.begin(); it != clients.end();) {
+                if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    try { it->get(); } catch (const std::exception& error) {
+                        std::cerr << "HTTP client error: " << error.what() << '\n';
+                    }
+                    it = clients.erase(it);
+                } else ++it;
+            }
             fd_set set; FD_ZERO(&set); FD_SET(server, &set);
             timeval timeout{0, 500000};
             const int ready = select(server + 1, &set, nullptr, nullptr, &timeout);
             if (ready < 0) { if (errno == EINTR) continue; throw std::runtime_error("select failed"); }
             if (ready > 0) {
                 const int client = accept4(server, nullptr, nullptr, SOCK_CLOEXEC);
-                if (client >= 0) clients.emplace_back(client_session, client, std::ref(cameras));
+                if (client >= 0) {
+                    if (clients.size() >= 32U) {
+                        const char response[] = "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                        (void)send_all(client, response, sizeof(response) - 1U);
+                        close(client);
+                    } else {
+                        try {
+                            clients.push_back(std::async(std::launch::async,
+                                client_session, client, std::ref(cameras)));
+                        } catch (...) { close(client); throw; }
+                    }
+                }
             }
         }
-        for (auto& client : clients) if (client.joinable()) client.join();
     } catch (const std::exception& error) {
         std::cerr << "ERROR: " << error.what() << '\n';
         running.store(false);
     }
+    running.store(false);
     if (server >= 0) close(server);
+    for (auto& client : clients) client.wait();
     for (auto& thread : capture_threads) if (thread.joinable()) thread.join();
     return 0;
 }

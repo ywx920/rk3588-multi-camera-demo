@@ -86,7 +86,7 @@ run_ssh -p "$BOARD_PORT" -o ConnectTimeout=5 "$TARGET" \
     'echo "SSH connected: host=$(hostname), user=$(id -un)"'
 
 echo "===== PC step 3: package project ====="
-tar -czf "$LOCAL_ARCHIVE" \
+tar -czf "$LOCAL_ARCHIVE" --exclude='.git' --exclude='.env' --exclude='.env.*' --exclude='.ssh' --exclude='id_rsa*' --exclude='id_ed25519*' --exclude='*.pem' --exclude='*.p12' --exclude='*.pfx' --exclude='*.key' \
     -C "$(dirname "$PROJECT_DIR")" "$(basename "$PROJECT_DIR")"
 ls -lh "$LOCAL_ARCHIVE"
 

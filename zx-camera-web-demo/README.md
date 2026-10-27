@@ -56,10 +56,17 @@ bash scripts/start_background.sh
 bash scripts/stop_background.sh
 ```
 
-PC 浏览器打开：
+默认只监听开发板的 `127.0.0.1`，服务没有内置身份认证。
+PC 远程预览建议通过 SSH 隧道，在 PC 终端执行（替换用户和地址）：
+
+```bash
+ssh -N -L 8080:127.0.0.1:8080 <BOARD_USER>@<BOARD_IP>
+```
+
+保持隧道连接，在 PC 浏览器打开：
 
 ```text
-http://192.168.10.65:8080/
+http://127.0.0.1:8080/
 ```
 
 配置中的`inference_fps`限制每路检测频率，`work_width`限制预览/推理工作图
@@ -72,29 +79,29 @@ http://192.168.10.65:8080/
 也可通过HTTP接口控制，例如关闭和重新开启J7检测：
 
 ```bash
-curl -X POST 'http://192.168.10.65:8080/toggle?id=j7&enabled=0'
-curl -X POST 'http://192.168.10.65:8080/toggle?id=j7&enabled=1'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/toggle?id=j7&enabled=0'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/toggle?id=j7&enabled=1'
 ```
 
 全部推理控制接口：
 
 ```bash
-curl -X POST 'http://192.168.10.65:8080/inference-all?enabled=0'
-curl -X POST 'http://192.168.10.65:8080/inference-all?enabled=1'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/inference-all?enabled=0'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/inference-all?enabled=1'
 ```
 
 摄像头软开关接口：
 
 ```bash
-curl -X POST 'http://192.168.10.65:8080/camera-toggle?id=j7&enabled=0'
-curl -X POST 'http://192.168.10.65:8080/camera-toggle?id=j7&enabled=1'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/camera-toggle?id=j7&enabled=0'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/camera-toggle?id=j7&enabled=1'
 ```
 
 全部摄像头软开关接口：
 
 ```bash
-curl -X POST 'http://192.168.10.65:8080/camera-all?enabled=0'
-curl -X POST 'http://192.168.10.65:8080/camera-all?enabled=1'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/camera-all?enabled=0'
+curl -H 'Content-Type: application/json' -X POST 'http://127.0.0.1:8080/camera-all?enabled=1'
 ```
 
 后台启动及统一关闭：
@@ -107,4 +114,25 @@ bash scripts/start_background.sh
 /home/zxwy/stop_camera_demos.sh
 ```
 
+控制接口仅接受带 `Content-Type: application/json` 的 POST 请求；GET 不再修改状态。
+接收请求头设有超时和大小限制，HTTP 客户端并发上限为 32，完成的连接任务会及时回收。
+状态接口会转义 JSON 字符串，配置中的显示文字会进行 HTML 转义。
+
+确需局域网直连时，在受控网络中运行：
+
+```bash
+WEB_BIND_ADDRESS=0.0.0.0 bash scripts/run_uc325_web.sh
+# 直接运行可使用 --bind <受控网卡IPv4地址>
+```
+
+显式开放监听不会增加身份认证，请配合防火墙或带认证的反向代理，不要直接公开摄像头画面和控制接口。
+本次安全检查未在实际 RK3588 板卡上执行；部署前仍需重新编译并验证。
+
 停止服务使用 `Ctrl+C`。
+
+不依赖 Qt 或摄像头的 HTTP 安全逻辑测试（在 Web 工程目录执行）：
+
+```bash
+c++ -std=c++17 -Wall -Wextra -Werror -Iinclude tests/http_security_test.cpp -o /tmp/zx-http-security-test
+/tmp/zx-http-security-test
+```

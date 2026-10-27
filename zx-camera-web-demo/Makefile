@@ -21,7 +21,7 @@ endif
 
 all: $(TARGET)
 
-$(TARGET): $(SOURCES) include/v4l2_mjpeg_camera.h
+$(TARGET): $(SOURCES) include/v4l2_mjpeg_camera.h include/http_security.h
 	$(CXX) $(CXXFLAGS) -Iinclude -I$(QT_PROJECT)/include \
 		-I$(QT_PROJECT)/third_party/rknn/include $(SOURCES) -o $@ $(LDLIBS)
 
