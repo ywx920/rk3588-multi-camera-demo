@@ -240,7 +240,7 @@ out-of-order=0
 样本：
 
 ```text
-/home/wx/2-demoRK/zx-camera-minimal/usb-samples/uc325-1280x720-sample.jpg
+<LOCAL_PRIVATE_SAMPLE.jpg>
 ```
 
 ## 8. UC325 Web 预览
@@ -303,3 +303,5 @@ curl http://127.0.0.1:8080/status
 4. Qt 源码已具备双接口，板端构建依赖尚未离线补齐；
 5. 后续修改 BSP 或切换 SDK 时，必须先复测 V4L2 最小采集，再验证 3A，
    最后才恢复 Qt/Web/AI。
+
+隐私说明：历史现场照片及包含原始采集帧的诊断包已从当前公开版本移除。图像测试请使用自有且获得授权的本地样本，不要提交可辨识人员或工作现场的画面。

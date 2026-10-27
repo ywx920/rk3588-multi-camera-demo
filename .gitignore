@@ -60,3 +60,9 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Private camera captures and diagnostic bundles
+**/board-reports/
+scripts/zx-camera-inspect-*.tar.gz
+zx-camera-minimal/usb-samples/*.jpg
+zx-camera-minimal/usb-samples/*.jpeg
