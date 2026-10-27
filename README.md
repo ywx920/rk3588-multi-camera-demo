@@ -93,7 +93,7 @@ bash scripts/start_background.sh
 浏览器访问：
 
 ```text
-http://192.168.10.65:8080/
+http://BOARD_IP:8080/
 ```
 
 主要特点：

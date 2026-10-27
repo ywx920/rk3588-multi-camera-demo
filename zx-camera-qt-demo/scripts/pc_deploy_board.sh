@@ -2,9 +2,9 @@
 set -euo pipefail
 project="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 askpass="$project/../zx-camera-minimal/scripts/pc_deploy_and_test.sh"
-ip="${BOARD_IP:-192.168.10.65}"
-user="${BOARD_USER:-zxwy}"
-password="${BOARD_PASSWORD:-qwer1234}"
+ip="${BOARD_IP:?Set BOARD_IP in the environment}"
+user="${BOARD_USER:?Set BOARD_USER in the environment}"
+password="${BOARD_PASSWORD:?Set BOARD_PASSWORD in the environment}"
 port="${BOARD_PORT:-22}"
 remote="${REMOTE_DIR:-/home/$user/zx-camera-qt-demo}"
 archive="/tmp/zx-camera-qt-demo-$$.tar.gz"
